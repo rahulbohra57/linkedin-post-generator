@@ -24,11 +24,11 @@ if _HF_TOKEN:
 
 def get_gemma_primary() -> LLM:
     """
-    Gemma 3 27B via Google AI Studio (free, separate quota from Gemini).
-    High-quality open model, great for creative writing tasks.
+    Gemma 3 4B via Google AI Studio (free, 30 RPM — sufficient for the full pipeline).
+    Using 4B instead of 27B to avoid the 2 RPM rate limit on larger models.
     """
     return LLM(
-        model="gemini/gemma-3-27b-it",
+        model="gemini/gemma-3-4b-it",
         api_key=settings.gemini_api_key,
         temperature=0.7,
         max_tokens=4096,
