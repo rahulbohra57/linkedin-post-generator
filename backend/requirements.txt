@@ -1,0 +1,42 @@
+# Web framework
+fastapi==0.115.5
+uvicorn[standard]==0.32.1
+python-multipart==0.0.12
+
+# Async & WebSocket
+websockets==14.1
+redis==5.2.0
+aiofiles==24.1.0
+
+# Database
+sqlalchemy[asyncio]==2.0.36
+aiosqlite==0.20.0
+alembic==1.14.0
+
+# AI / Agents
+crewai>=0.70.0
+crewai-tools>=0.14.0
+langchain-tavily>=0.1.5
+langchain-community>=0.3.0
+litellm>=1.55.0
+huggingface_hub>=0.26.0
+
+# Image processing
+Pillow==11.0.0
+httpx==0.28.1
+requests==2.32.3
+
+# Config & validation
+pydantic==2.10.3
+pydantic-settings==2.6.1
+python-dotenv==1.0.1
+
+# Security
+python-jose[cryptography]==3.3.0
+passlib[bcrypt]==1.7.4
+
+# Utilities
+structlog==24.4.0
+tenacity==9.0.0
+python-docx==1.1.2
+slowapi==0.1.9

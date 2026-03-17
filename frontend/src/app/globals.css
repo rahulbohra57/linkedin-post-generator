@@ -1,0 +1,18 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  body {
+    @apply bg-gray-50 text-gray-900 antialiased;
+  }
+}
+
+/* Tiptap editor styles */
+.tiptap-editor .ProseMirror {
+  @apply outline-none min-h-[200px];
+}
+
+.tiptap-editor .ProseMirror p {
+  @apply mb-3;
+}
