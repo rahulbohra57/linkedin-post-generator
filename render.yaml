@@ -13,7 +13,7 @@ services:
       - key: ENVIRONMENT
         value: production
       - key: ALLOWED_ORIGINS
-        value: https://linkedin-post-generator-jztf.onrender.com
+        value: https://linkedin-post-generator-frontend.onrender.com
       - key: SECRET_KEY
         generateValue: true
       # ── API keys — fill these in the Render dashboard ──────────────────
@@ -28,7 +28,7 @@ services:
 
   # ── Frontend ─────────────────────────────────────────────────────────────
   - type: web
-    name: linkedin-post-generator
+    name: linkedin-post-generator-frontend
     env: docker
     plan: free
     dockerfilePath: ./frontend/Dockerfile
