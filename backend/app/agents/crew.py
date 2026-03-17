@@ -112,7 +112,7 @@ async def _gemini_verify(session_id: str, post_text: str) -> str:
 
     try:
         response = await litellm.acompletion(
-            model="gemini/gemini-2.0-flash",
+            model="gemini/gemma-3-4b-it",
             api_key=settings.gemini_api_key,
             messages=[
                 {
