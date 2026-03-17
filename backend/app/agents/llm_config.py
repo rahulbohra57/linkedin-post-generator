@@ -3,7 +3,7 @@ LLM routing configuration.
 
 Set PRIMARY_LLM in your .env to choose the model for creative/reasoning tasks:
   PRIMARY_LLM=huggingface  → mistralai/Mistral-7B-Instruct-v0.3 (default, FREE)
-  PRIMARY_LLM=gemini       → gemini/gemini-2.5-flash (uses GEMINI_API_KEY)
+  PRIMARY_LLM=gemini       → gemini/gemini-2.0-flash (uses GEMINI_API_KEY)
   PRIMARY_LLM=claude       → claude-sonnet-4-6 (uses ANTHROPIC_API_KEY)
 
 All free tier: set PRIMARY_LLM=huggingface — only HUGGINGFACEHUB_API_TOKEN needed.
@@ -63,7 +63,7 @@ def get_claude() -> LLM:
 
 def get_gemini_pro() -> LLM:
     return LLM(
-        model="gemini/gemini-2.5-flash",
+        model="gemini/gemini-2.0-flash",
         api_key=settings.gemini_api_key,
         temperature=0.7,
         max_tokens=4096,
@@ -72,7 +72,7 @@ def get_gemini_pro() -> LLM:
 
 def get_gemini_fast() -> LLM:
     return LLM(
-        model="gemini/gemini-2.5-flash",
+        model="gemini/gemini-2.0-flash",
         api_key=settings.gemini_api_key,
         temperature=0.3,
         max_tokens=2048,
