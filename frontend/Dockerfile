@@ -7,9 +7,12 @@ RUN npm ci
 
 COPY . .
 
-# NEXT_PUBLIC_ vars must be available at build time
+# These vars must be available at build time (rewrites baked into routes-manifest.json)
 ARG NEXT_PUBLIC_WS_URL
 ENV NEXT_PUBLIC_WS_URL=$NEXT_PUBLIC_WS_URL
+
+ARG BACKEND_URL=https://linkedin-post-generator-api.onrender.com
+ENV BACKEND_URL=$BACKEND_URL
 
 RUN npm run build
 

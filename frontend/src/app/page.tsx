@@ -30,6 +30,7 @@ export default function HomePage() {
   const [audience, setAudience] = useState("professionals");
   const [length, setLength] = useState<"short" | "medium" | "long">("medium");
   const [loading, setLoading] = useState(false);
+  const [warming, setWarming] = useState(false);
   const [error, setError] = useState("");
 
   useEffect(() => {
@@ -43,7 +44,14 @@ export default function HomePage() {
     if (!topic.trim()) return;
 
     setLoading(true);
+    setWarming(true);
     setError("");
+
+    // Wake up the backend if it's sleeping (Render free tier spins down after inactivity)
+    try {
+      await fetch("/api/health-proxy");
+    } catch {}
+    setWarming(false);
 
     try {
       const sessionId = getOrCreateSessionId();
@@ -59,6 +67,7 @@ export default function HomePage() {
     } catch (err: any) {
       setError(err?.response?.data?.error || "Failed to start generation. Please try again.");
       setLoading(false);
+      setWarming(false);
     }
   };
 
@@ -175,7 +184,7 @@ export default function HomePage() {
           {loading ? (
             <>
               <div className="w-5 h-5 border-2 border-white/30 border-t-white rounded-full animate-spin" />
-              Starting generation...
+              {warming ? "Waking up backend…" : "Starting generation..."}
             </>
           ) : (
             <>

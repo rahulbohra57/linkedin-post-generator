@@ -13,7 +13,7 @@ services:
       - key: ENVIRONMENT
         value: production
       - key: ALLOWED_ORIGINS
-        value: https://linkedin-post-generator-frontend.onrender.com
+        value: https://linkedin-post-generator-jztf.onrender.com,https://linkedin-post-generator-frontend.onrender.com
       - key: SECRET_KEY
         generateValue: true
       # ── API keys — fill these in the Render dashboard ──────────────────
@@ -35,6 +35,8 @@ services:
     buildArgs:
       - key: NEXT_PUBLIC_WS_URL
         value: wss://linkedin-post-generator-api.onrender.com
+      - key: BACKEND_URL
+        value: https://linkedin-post-generator-api.onrender.com
     envVars:
       - key: BACKEND_URL
         value: https://linkedin-post-generator-api.onrender.com
