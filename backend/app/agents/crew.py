@@ -94,62 +94,47 @@ async def run_pipeline(
 
 async def _gemini_verify(session_id: str, post_text: str) -> str:
     """
-    Verify and refine the LinkedIn post text using the best available LLM.
-    Uses Claude Haiku if available, otherwise falls back to Gemma.
+    Use Gemini to verify and refine the LinkedIn post text.
     Emits agent_start / agent_complete events so the frontend shows progress.
-    Falls back to the original text if all models are unavailable.
+    Falls back to the original text if Gemini is unavailable.
     """
-    import os
     from app.config import get_settings
     settings = get_settings()
 
     await publish_event(session_id, make_agent_start_event("Gemini Verifier"))
 
-    prompt_content = (
-        "You are a senior LinkedIn content editor. Review the following LinkedIn post. "
-        "Fix any grammatical errors, improve clarity and flow, and ensure it sounds "
-        "authentic and human — not AI-generated. Keep the same structure, hashtags, "
-        "and key insights. Do NOT add any explanation or commentary. "
-        "Return ONLY the final post text.\n\n"
-        f"Post:\n{post_text}"
-    )
-
-    # Try Claude Haiku first (reliable, no per-minute token limits)
-    primary_llm = os.environ.get("PRIMARY_LLM", "gemma").lower()
-    if primary_llm == "claude" and settings.anthropic_api_key:
-        try:
-            response = await litellm.acompletion(
-                model="claude-haiku-4-5",
-                api_key=settings.anthropic_api_key,
-                messages=[{"role": "user", "content": prompt_content}],
-                max_tokens=2048,
-                temperature=0.3,
-            )
-            verified = response.choices[0].message.content.strip()
-            await publish_event(session_id, make_agent_complete_event("Gemini Verifier", verified))
-            return verified
-        except Exception as e:
-            # Fall through to Gemma
-            pass
-
-    # Fall back to Gemma if Gemini key available
     if not settings.gemini_api_key:
         await publish_event(
             session_id,
-            make_agent_complete_event("Gemini Verifier", "Skipped (no API key configured)."),
+            make_agent_complete_event("Gemini Verifier", "Skipped (no Gemini API key configured)."),
         )
         return post_text
 
     try:
         response = await litellm.acompletion(
-            model="gemini/gemma-3-4b-it",
+            model="gemini/gemini-2.0-flash",
             api_key=settings.gemini_api_key,
-            messages=[{"role": "user", "content": prompt_content}],
+            messages=[
+                {
+                    "role": "user",
+                    "content": (
+                        "You are a senior LinkedIn content editor. Review the following LinkedIn post. "
+                        "Fix any grammatical errors, improve clarity and flow, and ensure it sounds "
+                        "authentic and human — not AI-generated. Keep the same structure, hashtags, "
+                        "and key insights. Do NOT add any explanation or commentary. "
+                        "Return ONLY the final post text.\n\n"
+                        f"Post:\n{post_text}"
+                    ),
+                }
+            ],
             max_tokens=2048,
             temperature=0.3,
         )
         verified = response.choices[0].message.content.strip()
-        await publish_event(session_id, make_agent_complete_event("Gemini Verifier", verified))
+        await publish_event(
+            session_id,
+            make_agent_complete_event("Gemini Verifier", verified),
+        )
         return verified
     except Exception as e:
         await publish_event(

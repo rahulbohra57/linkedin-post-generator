@@ -2,6 +2,7 @@ from contextlib import asynccontextmanager
 from fastapi import FastAPI
 from fastapi.staticfiles import StaticFiles
 from pathlib import Path
+import litellm
 
 from app.config import get_settings
 from app.db.database import init_db
@@ -9,6 +10,9 @@ from app.core.middleware import setup_middleware
 from app.core.exceptions import AppError, app_error_handler
 from app.api.routes import generate, drafts, images, publish, auth
 from app.api.websocket import router as ws_router
+
+# Retry on transient errors (rate limits, 5xx). Waits up to 60s between retries.
+litellm.num_retries = 5
 
 settings = get_settings()
 
