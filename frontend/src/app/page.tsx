@@ -50,7 +50,9 @@ export default function HomePage() {
     // Wake up the backend if it's sleeping (Render free tier spins down after inactivity)
     try {
       await fetch("/api/health-proxy");
-    } catch {}
+    } catch {
+      // Continue anyway — backend might still be starting
+    }
     setWarming(false);
 
     try {
