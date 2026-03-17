@@ -76,6 +76,16 @@ def get_claude() -> LLM:
     )
 
 
+def get_claude_fast() -> LLM:
+    """Claude Haiku — cheap and fast, for tone analysis, hashtags, assembly."""
+    return LLM(
+        model="claude-haiku-4-5",
+        api_key=settings.anthropic_api_key,
+        temperature=0.3,
+        max_tokens=2048,
+    )
+
+
 def get_gemini_pro() -> LLM:
     return LLM(
         model="gemini/gemini-2.0-flash",
@@ -126,7 +136,9 @@ def fast() -> LLM:
     """Fast LLM for tone analysis, hashtag ranking, post assembly."""
     global _fast_llm
     if _fast_llm is None:
-        if _PRIMARY in ("gemini", "gemma") and settings.gemini_api_key:
+        if _PRIMARY == "claude" and settings.anthropic_api_key:
+            _fast_llm = get_claude_fast()
+        elif _PRIMARY in ("gemini", "gemma") and settings.gemini_api_key:
             _fast_llm = get_gemma_fast()
         elif settings.gemini_api_key:
             _fast_llm = get_gemma_fast()
