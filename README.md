@@ -1,6 +1,6 @@
 # LinkedIn Post Generator
 
-🔗 **Live App:** [Coming soon — will be updated after deployment](#)
+🔗 **Live App:** [https://linkedin-post-generator-jztf.onrender.com](https://linkedin-post-generator-jztf.onrender.com)
 
 ## About the App
 
