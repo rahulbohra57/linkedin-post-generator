@@ -16,6 +16,10 @@ import json
 import re
 import litellm
 from crewai import Crew, Task, Process
+import concurrent.futures
+import logging
+
+logger = logging.getLogger(__name__)
 
 from app.agents.definitions.researcher import get_researcher
 from app.agents.definitions.tone_analyzer import get_tone_analyzer
@@ -66,7 +70,7 @@ async def run_pipeline(
     Returns a dict with: post_text, hashtags, quality_score, quality_notes,
                          character_count, pexels_queries.
     """
-    loop = asyncio.get_event_loop()
+    loop = asyncio.get_running_loop()
 
     def _run_crew_sync():
         return _build_and_run_crew(session_id, topic, tone, target_audience, post_length, loop)
@@ -88,6 +92,7 @@ async def run_pipeline(
 
         return result
     except Exception as exc:
+        logger.exception("run_pipeline failed for session=%.8s", session_id)
         await publish_event(session_id, make_error_event(str(exc)))
         raise
 
@@ -344,11 +349,26 @@ def _build_and_run_crew(
 
 
 def _emit(loop: asyncio.AbstractEventLoop, session_id: str, agent_name: str, output: str):
-    """Fire-and-forget event emit from sync context."""
-    asyncio.run_coroutine_threadsafe(
-        publish_event(session_id, make_agent_complete_event(agent_name, output)),
-        loop,
-    )
+    """Emit agent_complete event from sync thread context."""
+    def _on_done(fut: concurrent.futures.Future) -> None:
+        if fut.cancelled():
+            return
+        exc = fut.exception()
+        if exc:
+            logger.warning(
+                "_emit failed for agent=%s session=%.8s: %s", agent_name, session_id, exc
+            )
+
+    try:
+        fut = asyncio.run_coroutine_threadsafe(
+            publish_event(session_id, make_agent_complete_event(agent_name, output)),
+            loop,
+        )
+        fut.add_done_callback(_on_done)
+    except Exception as e:
+        logger.warning(
+            "_emit scheduling failed for agent=%s session=%.8s: %s", agent_name, session_id, e
+        )
 
 
 def _extract_json(text: str) -> dict:
