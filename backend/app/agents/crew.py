@@ -12,12 +12,12 @@ Progress events are pushed to the in-memory event bus and forwarded to the
 client via WebSocket.
 """
 import asyncio
+import concurrent.futures
 import json
+import logging
 import re
 import litellm
 from crewai import Crew, Task, Process
-import concurrent.futures
-import logging
 
 logger = logging.getLogger(__name__)
 
