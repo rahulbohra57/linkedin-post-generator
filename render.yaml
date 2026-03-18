@@ -5,6 +5,7 @@ services:
     env: docker
     plan: free
     dockerfilePath: ./backend/Dockerfile
+    healthCheckPath: /health
     envVars:
       - key: DATABASE_URL
         value: sqlite+aiosqlite:///./data/linkedin_posts.db
@@ -42,3 +43,11 @@ services:
         value: https://linkedin-post-generator-api.onrender.com
       - key: NODE_ENV
         value: production
+
+  # ── Keep-alive cron (prevents backend cold starts on free tier) ───────────
+  - type: cron
+    name: linkedin-post-generator-keepalive
+    env: docker
+    plan: free
+    dockerfilePath: ./keepalive/Dockerfile
+    schedule: "*/10 * * * *"
