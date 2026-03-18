@@ -44,10 +44,3 @@ services:
       - key: NODE_ENV
         value: production
 
-  # ── Keep-alive cron (prevents backend cold starts on free tier) ───────────
-  - type: cron
-    name: linkedin-post-generator-keepalive
-    env: docker
-    plan: free
-    dockerfilePath: ./keepalive/Dockerfile
-    schedule: "*/10 * * * *"
