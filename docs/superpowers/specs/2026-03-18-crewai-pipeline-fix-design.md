@@ -50,7 +50,7 @@ logs. The UI shows a waiting state that never resolves.
 
 ## Solution — Targeted Fixes (Option A)
 
-Six file changes, no structural refactor.
+Four file changes, no structural refactor.
 
 ### 1. `docker-compose.yml` — remove `--reload`
 
@@ -111,7 +111,9 @@ scheduling errors, and attach a `done_callback` to observe asynchronous failures
 
 ```python
 def _emit(loop, session_id, agent_name, output):
-    def _on_done(fut):
+    def _on_done(fut: concurrent.futures.Future) -> None:
+        if fut.cancelled():
+            return
         exc = fut.exception()
         if exc:
             logger.warning("_emit failed for agent=%s session=%.8s: %s", agent_name, session_id, exc)
@@ -137,14 +139,19 @@ except Exception as exc:
 
 ### 4. `backend/requirements.txt` — pin crewai ecosystem
 
-During implementation: run `docker compose run backend pip show crewai crewai-tools
-langchain-community langchain-tavily` to identify currently installed versions. Pin all
-four packages to those exact versions using `==` to prevent future upgrades from breaking
-the API again. If the currently installed crewai is ≥1.0, install the latest 0.x release
-instead and verify `Task.callback` and `Process.sequential` work.
+Pin all four packages to exact (`==`) versions for reproducible builds. The currently
+installed versions (verified by running `pip show` inside the Docker image) are:
 
-Target constraint: `crewai>=0.80.0,<1.0.0` with crewai-tools, langchain-community, and
-langchain-tavily pinned to compatible versions verified against the crewai changelog.
+```
+crewai==0.193.2
+crewai-tools==0.71.0
+langchain-community==0.3.27
+langchain-tavily==0.2.17
+```
+
+These are the versions that are already working for agent instantiation. Exact pins prevent
+a future `pip install` from silently resolving crewai 1.x (which has breaking API changes)
+or an incompatible langchain version.
 
 ---
 
