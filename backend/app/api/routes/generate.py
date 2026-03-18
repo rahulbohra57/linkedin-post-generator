@@ -1,4 +1,5 @@
-import asyncio
+import json
+import logging
 from fastapi import APIRouter, BackgroundTasks, Depends
 from sqlalchemy.ext.asyncio import AsyncSession
 
@@ -7,6 +8,8 @@ from app.db.database import get_db
 from app.db.models import Draft, User
 from app.agents.crew import run_pipeline
 from app.services.session_service import set_session_data
+
+logger = logging.getLogger(__name__)
 
 router = APIRouter()
 
@@ -22,6 +25,7 @@ async def _run_and_save(
     """Background task: run pipeline, then update the draft in DB."""
     from app.db.database import AsyncSessionLocal
 
+    logger.info("Background task started: draft_id=%s session_id=%.8s", draft_id, session_id)
     try:
         result = await run_pipeline(session_id, topic, tone, target_audience, post_length)
 
@@ -36,15 +40,17 @@ async def _run_and_save(
                 draft.quality_score = result["quality_score"]
                 draft.quality_notes = "\n".join(result.get("quality_notes", []))
                 draft.character_count = result["character_count"]
+                draft.pexels_queries = json.dumps(result.get("image_prompts", []))
                 draft.status = "ready"
                 await db.commit()
     except Exception as exc:
+        logger.exception("Pipeline failed for draft_id=%s", draft_id)
         async with AsyncSessionLocal() as db:
             draft = await db.get(Draft, draft_id)
             if draft:
                 draft.status = "error"
                 await db.commit()
-        raise exc
+        raise
 
 
 @router.post("/generate", response_model=GenerateResponse)
