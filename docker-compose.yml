@@ -42,7 +42,7 @@ services:
       - BACKEND_URL=http://backend:8000
     depends_on:
       - backend
-    command: npm run dev
+    command: npm run start
 
 volumes:
   redis_data:
