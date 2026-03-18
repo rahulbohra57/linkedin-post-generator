@@ -16,7 +16,7 @@ The app runs a sequential CrewAI pipeline on the backend: a Researcher gathers w
 |-------|------------|
 | Frontend | Next.js 15, React 19, Tailwind CSS, Zustand |
 | Backend | FastAPI, Python 3.11, SQLAlchemy + SQLite |
-| AI Agents | CrewAI, Claude Sonnet (Anthropic), Gemini Flash 2.0 |
+| AI Agents | CrewAI, HuggingFace Qwen2.5-7B (primary), Gemini Flash (final validation) |
 | Search | Tavily API (web research) |
 | Images | Pexels API (stock photos) |
 | Streaming | WebSocket + asyncio in-memory queue |
@@ -45,8 +45,9 @@ The following API keys must be set as environment variables before the app will 
 
 | Key | Where to get it |
 |-----|----------------|
-| `ANTHROPIC_API_KEY` | [console.anthropic.com](https://console.anthropic.com) |
-| `GEMINI_API_KEY` | [aistudio.google.com](https://aistudio.google.com) |
+| `HUGGINGFACEHUB_API_TOKEN` | [huggingface.co/settings/tokens](https://huggingface.co/settings/tokens) — primary LLM |
+| `GEMINI_API_KEY` | [aistudio.google.com](https://aistudio.google.com) — final post validation |
+| `GEMINI_API_KEY2` / `GEMINI_API_KEY3` | Additional Gemini keys for fallback rotation |
 | `TAVILY_API_KEY` | [tavily.com](https://tavily.com) |
 | `PEXELS_API_KEY` | [pexels.com/api](https://pexels.com/api) (free tier available) |
 
