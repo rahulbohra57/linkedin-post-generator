@@ -17,10 +17,19 @@ services:
         value: https://linkedin-post-generator-jztf.onrender.com,https://linkedin-post-generator-frontend.onrender.com
       - key: SECRET_KEY
         generateValue: true
+      # ── LLM routing ────────────────────────────────────────────────────
+      - key: PRIMARY_LLM
+        value: huggingface
       # ── API keys — fill these in the Render dashboard ──────────────────
       - key: ANTHROPIC_API_KEY
         sync: false
+      - key: HUGGINGFACEHUB_API_TOKEN
+        sync: false
       - key: GEMINI_API_KEY
+        sync: false
+      - key: GEMINI_API_KEY2
+        sync: false
+      - key: GEMINI_API_KEY3
         sync: false
       - key: TAVILY_API_KEY
         sync: false

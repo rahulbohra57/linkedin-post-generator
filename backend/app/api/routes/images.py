@@ -1,4 +1,5 @@
 import uuid
+import json
 import logging
 from pathlib import Path
 from fastapi import APIRouter, Depends, UploadFile, File, HTTPException
@@ -28,7 +29,14 @@ async def get_images(
     if not draft:
         raise DraftNotFoundError(draft_id)
 
-    image_prompts = await get_session_data(session_id, "image_prompts") or []
+    # Try in-memory session first; fall back to DB-persisted queries (survives backend restarts)
+    image_prompts = await get_session_data(session_id, "image_prompts")
+    if not image_prompts and draft.pexels_queries:
+        try:
+            image_prompts = json.loads(draft.pexels_queries)
+        except Exception:
+            image_prompts = []
+    image_prompts = image_prompts or []
     logger.info(
         "GET /images draft_id=%s session_id=%s search_query=%r image_prompts=%r",
         draft_id, session_id[:8], search_query, image_prompts,

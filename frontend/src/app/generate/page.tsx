@@ -58,6 +58,7 @@ function GeneratePage() {
 
   // Navigation
   const [saving, setSaving] = useState(false);
+  const [pipelineError, setPipelineError] = useState<string | null>(null);
 
   // True if the draft is already done when the page first loads (e.g. "Back to edit")
   const [initialCheckDone, setInitialCheckDone] = useState(false);
@@ -154,7 +155,10 @@ function GeneratePage() {
           setPostReady(true);
           return true; // stop polling
         }
-        if (draft.status === "error") return true; // stop polling on error too
+        if (draft.status === "error") {
+          setPipelineError("Post generation failed. Please go back and try again.");
+          return true;
+        }
       } catch {}
       return false;
     };
@@ -265,8 +269,15 @@ function GeneratePage() {
             })}
           </div>
 
-          {/* Only show WS error if post is not yet ready */}
-          {error && !isReady && (
+          {/* Pipeline failure error */}
+          {pipelineError && (
+            <div className="mt-4 flex items-start gap-2 bg-red-50 text-red-700 p-3 rounded-lg text-sm">
+              <AlertCircle className="w-4 h-4 flex-shrink-0 mt-0.5" />
+              <span>{pipelineError}</span>
+            </div>
+          )}
+          {/* Only show WS error if post is not yet ready and no pipeline error */}
+          {error && !isReady && !pipelineError && (
             <div className="mt-4 flex items-start gap-2 bg-yellow-50 text-yellow-700 p-3 rounded-lg text-sm">
               <AlertCircle className="w-4 h-4 flex-shrink-0 mt-0.5" />
               <span>Live updates unavailable — checking for completion…</span>

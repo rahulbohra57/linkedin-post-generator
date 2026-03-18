@@ -101,52 +101,93 @@ async def _gemini_verify(session_id: str, post_text: str) -> str:
     """
     Use Gemini to verify and refine the LinkedIn post text.
     Emits agent_start / agent_complete events so the frontend shows progress.
-    Falls back to the original text if Gemini is unavailable.
+
+    Fallback chain on rate-limit or truncation:
+      1. gemini-2.0-flash  + GEMINI_API_KEY
+      2. gemini-2.5-flash  + GEMINI_API_KEY
+      3. gemini-2.0-flash  + GEMINI_API_KEY2
+      4. gemini-2.5-flash  + GEMINI_API_KEY2
+      5. gemini-2.0-flash  + GEMINI_API_KEY3
+      6. gemini-2.5-flash  + GEMINI_API_KEY3
+    Falls back to the original text when all slots are exhausted.
+    Truncated responses (< 70% of original length) are rejected and the next slot is tried.
     """
     from app.config import get_settings
     settings = get_settings()
 
     await publish_event(session_id, make_agent_start_event("Gemini Verifier"))
 
-    if not settings.gemini_api_key:
+    if not settings.gemini_api_key and not settings.gemini_api_key2 and not settings.gemini_api_key3:
         await publish_event(
             session_id,
             make_agent_complete_event("Gemini Verifier", "Skipped (no Gemini API key configured)."),
         )
         return post_text
 
-    try:
-        response = await litellm.acompletion(
-            model="gemini/gemini-2.0-flash",
-            api_key=settings.gemini_api_key,
-            messages=[
-                {
-                    "role": "user",
-                    "content": (
-                        "You are a senior LinkedIn content editor. Review the following LinkedIn post. "
-                        "Fix any grammatical errors, improve clarity and flow, and ensure it sounds "
-                        "authentic and human — not AI-generated. Keep the same structure, hashtags, "
-                        "and key insights. Do NOT add any explanation or commentary. "
-                        "Return ONLY the final post text.\n\n"
-                        f"Post:\n{post_text}"
-                    ),
-                }
-            ],
-            max_tokens=2048,
-            temperature=0.3,
-        )
-        verified = response.choices[0].message.content.strip()
-        await publish_event(
-            session_id,
-            make_agent_complete_event("Gemini Verifier", verified),
-        )
-        return verified
-    except Exception as e:
-        await publish_event(
-            session_id,
-            make_agent_complete_event("Gemini Verifier", f"Verification skipped: {e}"),
-        )
-        return post_text
+    # Build fallback slots in priority order
+    fallback_slots = []
+    if settings.gemini_api_key:
+        fallback_slots.append(("gemini/gemini-2.0-flash", settings.gemini_api_key))
+        fallback_slots.append(("gemini/gemini-2.5-flash", settings.gemini_api_key))
+    if settings.gemini_api_key2:
+        fallback_slots.append(("gemini/gemini-2.0-flash", settings.gemini_api_key2))
+        fallback_slots.append(("gemini/gemini-2.5-flash", settings.gemini_api_key2))
+    if settings.gemini_api_key3:
+        fallback_slots.append(("gemini/gemini-2.0-flash", settings.gemini_api_key3))
+        fallback_slots.append(("gemini/gemini-2.5-flash", settings.gemini_api_key3))
+
+    prompt = (
+        "You are a senior LinkedIn content editor. Review the following LinkedIn post. "
+        "Fix any grammatical errors, improve clarity and flow, and ensure it sounds "
+        "authentic and human — not AI-generated. Keep the same structure, hashtags, "
+        "and key insights. Do NOT add any explanation or commentary. "
+        "Return ONLY the final post text.\n\n"
+        f"Post:\n{post_text}"
+    )
+
+    last_error = None
+    min_acceptable_length = int(len(post_text) * 0.7)
+    for model, api_key in fallback_slots:
+        try:
+            logger.info("_gemini_verify: trying model=%s", model)
+            response = await litellm.acompletion(
+                model=model,
+                api_key=api_key,
+                messages=[{"role": "user", "content": prompt}],
+                max_tokens=2048,
+                temperature=0.3,
+                num_retries=0,
+            )
+            verified = response.choices[0].message.content.strip()
+            # Reject truncated responses — if the output is suspiciously shorter
+            # than the original, skip this slot and try the next one.
+            if len(verified) < min_acceptable_length:
+                logger.warning(
+                    "_gemini_verify: model=%s returned truncated response "
+                    "(got %d chars, expected >= %d). Trying next slot.",
+                    model, len(verified), min_acceptable_length,
+                )
+                continue
+            await publish_event(
+                session_id,
+                make_agent_complete_event("Gemini Verifier", verified),
+            )
+            return verified
+        except Exception as e:
+            last_error = e
+            logger.warning("_gemini_verify: slot model=%s failed: %s", model, e)
+            continue
+
+    # All slots exhausted — return original text unchanged
+    logger.warning(
+        "_gemini_verify: all slots exhausted (quota or truncation), using original text. Last error: %s",
+        last_error,
+    )
+    await publish_event(
+        session_id,
+        make_agent_complete_event("Gemini Verifier", post_text),
+    )
+    return post_text
 
 
 def _build_and_run_crew(

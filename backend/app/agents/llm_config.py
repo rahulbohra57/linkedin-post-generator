@@ -7,8 +7,8 @@ Set PRIMARY_LLM in your .env to choose the model for creative/reasoning tasks:
   PRIMARY_LLM=gemma       → gemma-3-4b-it via Google AI (uses GEMINI_API_KEY, free)
   PRIMARY_LLM=claude      → claude-sonnet-4-6 (uses ANTHROPIC_API_KEY)
 
-Secondary/fast LLM is always Gemini (gemma-3-4b-it) when a Gemini key is present,
-otherwise falls back to HuggingFace.
+Secondary/fast LLM uses HuggingFace (Qwen) when available, falling back to Claude
+then Gemini. Gemini is reserved exclusively for the final post-validation step.
 """
 import os
 from crewai import LLM
@@ -138,17 +138,18 @@ def primary() -> LLM:
 def fast() -> LLM:
     """
     Secondary/fast LLM for tone analysis, hashtag ranking, post assembly.
-    Always uses Gemini when available; falls back to HuggingFace.
+    Uses HuggingFace (Qwen) when available. Gemini is reserved for post-validation only.
     """
     global _fast_llm
     if _fast_llm is None:
-        if settings.gemini_api_key:
-            # Gemini is the secondary LLM regardless of primary choice
-            _fast_llm = get_gemini_fast()
+        if _HF_TOKEN:
+            _fast_llm = get_huggingface_fast()
         elif _PRIMARY == "claude" and settings.anthropic_api_key:
             _fast_llm = get_claude_fast()
+        elif settings.gemini_api_key:
+            _fast_llm = get_gemini_fast()
         else:
-            _fast_llm = get_huggingface_fast()
+            raise RuntimeError("No LLM API key configured. Set HUGGINGFACEHUB_API_TOKEN.")
     return _fast_llm
 
 

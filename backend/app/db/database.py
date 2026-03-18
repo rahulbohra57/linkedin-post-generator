@@ -23,5 +23,11 @@ async def get_db():
 
 async def init_db():
     from app.db import models  # noqa: F401
+    from sqlalchemy import text
     async with engine.begin() as conn:
         await conn.run_sync(Base.metadata.create_all)
+        # Add pexels_queries column to existing DBs (idempotent migration)
+        try:
+            await conn.execute(text("ALTER TABLE drafts ADD COLUMN pexels_queries TEXT"))
+        except Exception:
+            pass  # Column already exists

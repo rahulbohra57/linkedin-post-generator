@@ -8,6 +8,8 @@ class Settings(BaseSettings):
     # LLMs
     anthropic_api_key: str = ""
     gemini_api_key: str = ""
+    gemini_api_key2: str = ""
+    gemini_api_key3: str = ""
     huggingfacehub_api_token: str = ""
     openai_api_key: str = ""
 

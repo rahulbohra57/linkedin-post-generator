@@ -36,6 +36,7 @@ class Draft(Base):
     quality_notes: Mapped[str | None] = mapped_column(Text)
     character_count: Mapped[int | None] = mapped_column(Integer)
     selected_image_url: Mapped[str | None] = mapped_column(Text)
+    pexels_queries: Mapped[str | None] = mapped_column(Text)  # JSON list of {query, style} dicts
     status: Mapped[str] = mapped_column(String(32), default="generating")
     created_at: Mapped[DateTime] = mapped_column(DateTime, server_default=func.now())
     updated_at: Mapped[DateTime] = mapped_column(
